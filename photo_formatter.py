@@ -28,8 +28,8 @@ def analyze_hsv_range(image_pil: Image.Image) -> Tuple[np.ndarray, np.ndarray]:
             print("Warning: Empty or grayscale image detected.")
             return np.array([0, 0, 0], dtype=np.uint8), np.array([179, 255, 255], dtype=np.uint8)
 
-        low = np.array([np.percentile(h, 5), np.percentile(s, 5), np.percentile(v, 5)], dtype=np.uint8)
-        high = np.array([np.percentile(h, 95), np.percentile(s, 95), np.percentile(v, 95)], dtype=np.uint8)
+        low = np.array([np.percentile(h, 25), np.percentile(s, 25), np.percentile(v, 25)], dtype=np.uint8)
+        high = np.array([np.percentile(h, 75), np.percentile(s, 75), np.percentile(v, 75)], dtype=np.uint8)
 
         pad = np.array([3, 10, 10], dtype=np.uint8)
         low = np.clip(low - pad, 0, 255)
