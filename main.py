@@ -1,8 +1,16 @@
 import lookup
 import air_pollution_core as ap
 import file_storage as fs
-my_api = lookup.FreeAPIManager()
+from PIL import Image
 my_file_storage = fs.LocalFileStorage()
-proceeder = ap.SatelliteImageProceeder(api_manager=my_api, file_storage=my_file_storage)
-result = proceeder.process_by_place("Novovolynsk")
+my_api = lookup.FreeAPIManager(my_file_storage)
+forest_img = my_file_storage.load("forest_full")  
+field_img = my_file_storage.load("field_full")     
+proceeder = ap.SatelliteImageProceeder(
+    api_manager=my_api,
+    forest_img=forest_img,
+    field_img=field_img,
+)
+result = proceeder.process_by_place("Lytovezh")
 result.show()
+
