@@ -1,11 +1,12 @@
 import air_pollution_core.proceeder as ap
 
 proceeder = ap.SatelliteImageProceeder()
-result = proceeder.process_by_place("Lviv")
+region = "Novovolynsk"
+result = proceeder.process_by_place(region)
 if isinstance(result, dict):
     result["image"].show()
 
-    print("Результати аналізу регіону Lviv")
+    print(f"Результати аналізу регіону {region}")
     print(f"Площа лісу (гектари): {result['trees']['area_hectares']}")
     print(f"Площа полів (гектари): {result['fields']['area_hectares']}")
     print(f"Орієнтовна кількість дерев: {result['trees']['estimated_trees']}")

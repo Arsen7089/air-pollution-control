@@ -4,7 +4,7 @@ class AreaCalculator:
     
     @staticmethod
     def estimate_area_and_trees(mask: np.ndarray, pixel_to_m2: float, trees_per_m2: float):
-        non_zero_pixels = np.count_nonzero(mask)
+        non_zero_pixels = int(np.count_nonzero(mask))
         area_m2 = non_zero_pixels * pixel_to_m2
         area_ha = area_m2 / 10_000
         trees_est = area_m2 * trees_per_m2

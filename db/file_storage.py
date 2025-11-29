@@ -1,120 +1,79 @@
 import os
-import glob
-import pickle
 import json
-from abc import ABC, abstractmethod
+import pickle
+import numpy as np
 from typing import Optional, Any
-from PIL import Image
 
-
-class AbstractFileStorage(ABC):
-
-    @abstractmethod
-    def save(self, data: Any, file_id: str, format: Optional[str] = None) -> bool:
-        pass
-
-    @abstractmethod
-    def load(self, file_id: str) -> Optional[Any]:
-        pass
-
-    @abstractmethod
-    def delete(self, file_id: str) -> bool:
-        pass
-
-    @abstractmethod
-    def list(self) -> list:
-        pass
-
-
-class LocalFileStorage(AbstractFileStorage):
+class LocalFileStorage:
     def __init__(self, storage_dir="storage"):
         self.storage_dir = storage_dir
         os.makedirs(storage_dir, exist_ok=True)
 
-    def _find_file(self, file_id: str) -> Optional[str]:
-        pattern = os.path.join(self.storage_dir, f"{file_id}.*")
-        matches = glob.glob(pattern)
-        return matches[0] if matches else None
+    def _full_path(self, file_id: str, ext: str) -> str:
+        dir_path = os.path.join(self.storage_dir, os.path.dirname(file_id))
+        os.makedirs(dir_path, exist_ok=True)
+        return os.path.join(dir_path, f"{os.path.basename(file_id)}.{ext}")
 
-    def save(self, data: Any, file_id: str, format: Optional[str] = None) -> bool:
+    # ---- Словники ----
+    def save_dict(self, data: dict, file_id: str) -> bool:
         try:
-            dir_path = os.path.join(self.storage_dir, os.path.dirname(file_id))
-            os.makedirs(dir_path, exist_ok=True)
-            base_name = os.path.basename(file_id)
-
-            if isinstance(data, (dict, list, tuple)):
-                format = format or "txt"
-                path = os.path.join(dir_path, f"{base_name}.{format}")
-                with open(path, "w", encoding="utf-8") as file:
-                    file.write(json.dumps(data, indent=4, ensure_ascii=False))
-
-            elif isinstance(data, Image.Image):
-                format = format or (data.format or "png").lower()
-                path = os.path.join(dir_path, f"{base_name}.{format}")
-                data.save(path)
-
-            elif isinstance(data, str):
-                format = format or "txt"
-                path = os.path.join(dir_path, f"{base_name}.{format}")
-                with open(path, "w", encoding="utf-8") as file:
-                    file.write(data)
-
-            elif isinstance(data, bytes):
-                format = format or "bin"
-                path = os.path.join(dir_path, f"{base_name}.{format}")
-                with open(path, "wb") as file:
-                    file.write(data)
-
-            else:
-                format = format or "pkl"
-                path = os.path.join(dir_path, f"{base_name}.{format}")
-                with open(path, "wb") as file:
-                    pickle.dump(data, file)
-
+            path = self._full_path(file_id, "txt")
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
             return True
-
         except Exception as e:
-            print(f"Error saving file: {e}")
+            print(f"Error saving dict: {e}")
             return False
 
-    def load(self, file_id: str) -> Optional[Any]:
-        path = self._find_file(file_id)
-        if not path:
-            return None
-
-        ext = path.split(".")[-1].lower()
-
+    def load_dict(self, file_id: str) -> Optional[dict]:
         try:
-            if ext in ("png", "jpg", "jpeg", "bmp", "gif", "webp"):
-                return Image.open(path)
-
-            elif ext in ("txt", "md", "csv", "json"):
-                with open(path, "r", encoding="utf-8") as file:
-                    content = file.read()
-                try:
-                    return json.loads(content)
-                except json.JSONDecodeError:
-                    return content 
-
-            elif ext == "pkl":
-                with open(path, "rb") as file:
-                    return pickle.load(file)
-
-            else:
-                with open(path, "rb") as file:
-                    return file.read()
-
+            path = self._full_path(file_id, "txt")
+            if not os.path.exists(path):
+                return None
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
         except Exception as e:
-            print(f"Error loading file: {e}")
+            print(f"Error loading dict: {e}")
             return None
 
-    def delete(self, file_id: str) -> bool:
-        path = self._find_file(file_id)
-        if path:
-            os.remove(path)
+    # ---- NumPy масиви ----
+    def save_numpy(self, data: np.ndarray, file_id: str) -> bool:
+        try:
+            path = self._full_path(file_id, "npy")
+            np.save(path, data)
             return True
-        return False
+        except Exception as e:
+            print(f"Error saving numpy array: {e}")
+            return False
 
-    def list(self) -> list:
-        files = glob.glob(os.path.join(self.storage_dir, "**/*.*"), recursive=True)
-        return [os.path.relpath(f, self.storage_dir) for f in files]
+    def load_numpy(self, file_id: str) -> Optional[np.ndarray]:
+        try:
+            path = self._full_path(file_id, "npy")
+            if not os.path.exists(path):
+                return None
+            return np.load(path, allow_pickle=True)
+        except Exception as e:
+            print(f"Error loading numpy array: {e}")
+            return None
+
+    # ---- Бінарні файли ----
+    def save_binary(self, data: Any, file_id: str) -> bool:
+        try:
+            path = self._full_path(file_id, "pkl")
+            with open(path, "wb") as f:
+                pickle.dump(data, f)
+            return True
+        except Exception as e:
+            print(f"Error saving binary: {e}")
+            return False
+
+    def load_binary(self, file_id: str) -> Optional[Any]:
+        try:
+            path = self._full_path(file_id, "pkl")
+            if not os.path.exists(path):
+                return None
+            with open(path, "rb") as f:
+                return pickle.load(f)
+        except Exception as e:
+            print(f"Error loading binary: {e}")
+            return None
