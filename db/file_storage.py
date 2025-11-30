@@ -1,8 +1,8 @@
 import os
 import json
-import pickle
-import numpy as np
 from typing import Optional, Any
+from PIL import Image
+
 
 class LocalFileStorage:
     def __init__(self, storage_dir="storage"):
@@ -14,7 +14,6 @@ class LocalFileStorage:
         os.makedirs(dir_path, exist_ok=True)
         return os.path.join(dir_path, f"{os.path.basename(file_id)}.{ext}")
 
-    # ---- Словники ----
     def save_dict(self, data: dict, file_id: str) -> bool:
         try:
             path = self._full_path(file_id, "txt")
@@ -36,44 +35,25 @@ class LocalFileStorage:
             print(f"Error loading dict: {e}")
             return None
 
-    # ---- NumPy масиви ----
-    def save_numpy(self, data: np.ndarray, file_id: str) -> bool:
+    def save_img(self, img: Image.Image, file_id: str) -> bool:
         try:
-            path = self._full_path(file_id, "npy")
-            np.save(path, data)
+            path = self._full_path(file_id, "jpg")
+            if img.mode not in ("RGB", "L"):
+                img = img.convert("RGB")
+            img.save(path, format="JPEG", quality=90)
             return True
         except Exception as e:
-            print(f"Error saving numpy array: {e}")
+            print(f"Error saving image: {e}")
             return False
 
-    def load_numpy(self, file_id: str) -> Optional[np.ndarray]:
+    def load_img(self, file_id: str) -> Optional[Image.Image]:
         try:
-            path = self._full_path(file_id, "npy")
+            path = self._full_path(file_id, "jpg")
             if not os.path.exists(path):
                 return None
-            return np.load(path, allow_pickle=True)
+            img = Image.open(path)
+            return img
         except Exception as e:
-            print(f"Error loading numpy array: {e}")
+            print(f"Error loading image: {e}")
             return None
 
-    # ---- Бінарні файли ----
-    def save_binary(self, data: Any, file_id: str) -> bool:
-        try:
-            path = self._full_path(file_id, "pkl")
-            with open(path, "wb") as f:
-                pickle.dump(data, f)
-            return True
-        except Exception as e:
-            print(f"Error saving binary: {e}")
-            return False
-
-    def load_binary(self, file_id: str) -> Optional[Any]:
-        try:
-            path = self._full_path(file_id, "pkl")
-            if not os.path.exists(path):
-                return None
-            with open(path, "rb") as f:
-                return pickle.load(f)
-        except Exception as e:
-            print(f"Error loading binary: {e}")
-            return None

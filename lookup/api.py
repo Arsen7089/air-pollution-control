@@ -10,7 +10,7 @@ from PIL import Image
 
 class AbstractAPIManager(ABC):
     @abstractmethod
-    def find_photo(self, data):
+    def find_photo(self, results, query=None):
         pass
 
     @abstractmethod
@@ -22,13 +22,12 @@ class AbstractAPIManager(ABC):
         if not results:
             raise ValueError(f"No coordinates found for '{place_name}'")
 
-        photo_hsv, pixel_area_m2 = self.find_photo(results)
-        if photo_hsv is None:
+        photo_img, pixel_area_m2 = self.find_photo(results, query=place_name)
+        if photo_img is None:
             raise ValueError(
-                f"No photo found for coordinates "
-                f"({results['location']['lat']}, {results['location']['lng']})"
+                f"No photo found for coordinates ({results['lat']}, {results['lng']})"
             )
-        return photo_hsv, pixel_area_m2
+        return photo_img, pixel_area_m2
 
 
 class FreeAPIManager(AbstractAPIManager):
@@ -41,19 +40,16 @@ class FreeAPIManager(AbstractAPIManager):
         self.img_width = img_width
         self.img_height = img_height
 
-    def find_photo(self, results) -> Optional[Tuple[np.ndarray, float]]:
-        try:
-            lat = results['location']['lat']
-            lon = results['location']['lng']
-            name = results['name_of_place']
-        except KeyError:
-            return None
+    def find_photo(self, results, query=None) -> Optional[Tuple[Image.Image, float]]:
+        lat = results.get('lat')
+        lon = results.get('lng')
+        name = str(query).replace(" ", "_") if query else f"{lat}_{lon}"
 
-        hsv_file_id = f"{name}/photo_hsv"
+        img_file_id = f"locations/{name}/photo"
 
-        cached_hsv = self.storage.load_numpy(hsv_file_id)
-        if isinstance(cached_hsv, np.ndarray):
-            return cached_hsv, self.compute_pixel_scale(lat)
+        cached_img = self.storage.load_img(img_file_id)
+        if isinstance(cached_img, Image.Image):
+            return cached_img, self.compute_pixel_scale(lat)
 
         url = (
             "https://services.arcgisonline.com/arcgis/rest/services/"
@@ -63,25 +59,24 @@ class FreeAPIManager(AbstractAPIManager):
             f"&bboxSR=4326&size={self.img_width},{self.img_height}&f=image"
         )
 
-        with urllib.request.urlopen(url, timeout=30) as r:
+        with urllib.request.urlopen(url, timeout=60) as r:
             img_data = r.read()
-                
 
         img = Image.open(io.BytesIO(img_data))
         img.load()
-        hsv_img = np.array(img.convert("HSV"))  
-        self.storage.save_numpy(hsv_img, hsv_file_id)
+
+        self.storage.save_img(img, img_file_id)
 
         pixel_area_m2 = self.compute_pixel_scale(lat)
-        return hsv_img, pixel_area_m2
+        return img, pixel_area_m2
 
     def find_coordinates(self, query: str) -> Optional[Dict[str, Any]]:
-        file_id = f"{query}/coords"
+        file_id = f"locations/{query}/coords"
         cached = self.storage.load_dict(file_id)
 
         if isinstance(cached, dict):
             return cached
-        
+
         r = requests.get(
             "https://photon.komoot.io/api/",
             params={"q": query, "limit": 1},
@@ -96,8 +91,8 @@ class FreeAPIManager(AbstractAPIManager):
         coords = data["features"][0]["geometry"]["coordinates"]
 
         result = {
-            "name_of_place": query,
-            "location": {"lat": coords[1], "lng": coords[0]},
+            "lat": coords[1],
+            "lng": coords[0]
         }
 
         self.storage.save_dict(result, file_id)

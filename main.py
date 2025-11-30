@@ -1,7 +1,7 @@
 import air_pollution_core.proceeder as ap
 
 proceeder = ap.SatelliteImageProceeder()
-region = "Novovolynsk"
+region = "Lviv"
 result = proceeder.process_by_place(region)
 if isinstance(result, dict):
     result["image"].show()
