@@ -2,9 +2,31 @@ import os
 import json
 from typing import Optional, Any
 from PIL import Image
+from abc import ABC, abstractmethod
+
+class AbstractFileStorage(ABC):
+    @abstractmethod
+    def save_dict(self, data: dict, file_id: str) -> bool:
+        """Save a dictionary to a file."""
+        pass
+
+    @abstractmethod
+    def load_dict(self, file_id: str) -> Optional[dict]:
+        """Load a dictionary from a file."""
+        pass
+
+    @abstractmethod
+    def save_img(self, img: Image.Image, file_id: str) -> bool:
+        """Save an image to a file."""
+        pass
+
+    @abstractmethod
+    def load_img(self, file_id: str) -> Optional[Image.Image]:
+        """Load an image from a file."""
+        pass
 
 
-class LocalFileStorage:
+class LocalFileStorage(AbstractFileStorage):
     def __init__(self, storage_dir="storage"):
         self.storage_dir = storage_dir
         os.makedirs(storage_dir, exist_ok=True)

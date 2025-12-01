@@ -3,6 +3,7 @@ from air_pollution_core.calculator import AreaCalculator
 from air_pollution_core.visualizer import ImageVisualizer
 from lookup.api import AbstractAPIManager, FreeAPIManager
 from db.file_storage import LocalFileStorage
+from db.mongo.mongo_storage import MongoFileStorage
 from PIL import Image
 import numpy as np
 import cv2
@@ -16,7 +17,7 @@ class SatelliteImageProceeder:
         trees_per_m2: float = 0.02,
         clean_air_forest_percent: float = 0.2,
     ):
-        self.file_storage = LocalFileStorage()
+        self.file_storage = MongoFileStorage()
         self.api = FreeAPIManager(self.file_storage)
         self.trees_per_m2 = trees_per_m2
         self.clean_air_forest_percent = clean_air_forest_percent
