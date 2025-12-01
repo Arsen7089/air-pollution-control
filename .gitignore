@@ -1,2 +1,4 @@
 storage
 mongodb
+__pycache__/
+
