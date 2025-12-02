@@ -80,7 +80,7 @@ class FreeAPIManager(AbstractAPIManager):
         r = requests.get(
             "https://photon.komoot.io/api/",
             params={"q": query, "limit": 1},
-            timeout=10
+            timeout=60
         )
         r.raise_for_status()
         data = r.json()

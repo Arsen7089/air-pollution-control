@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Afforestation Analysis</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 40px; }
+    img { max-width: 600px; margin-top: 20px; border: 1px solid #ccc; }
+    table { border-collapse: collapse; margin-top: 20px; }
+    td, th { border: 1px solid #ccc; padding: 8px; }
+    input[type=text] {
+        padding: 8px;
+        width: 230px;
+        font-size: 15px;
+    }
+    button {
+        padding: 8px 14px;
+        font-size: 15px;
+        cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Afforestation Potential Analyzer</h1>
+
+  <form method="POST" action="/">
+    <input type="text" name="region" placeholder="Enter a city or region..." required>
+    <button type="submit">Analyze</button>
+  </form>
+
+  {% if result %}
+    <h2>Results for {{ result.region }}</h2>
+
+    {% if image_base64 %}
+      <img src="data:image/png;base64,{{ image_base64 }}" alt="Result Image">
+    {% endif %}
+
+      <table>
+        <tr><th>Parameter</th><th>Value</th></tr>
+        <tr><td>Tree area (ha)</td><td>{{ result.trees_area }}</td></tr>
+        <tr><td>Land area (ha)</td><td>{{ result.fields_area }}</td></tr>
+        <tr><td>Estimated number of trees</td><td>{{ result.estimated_trees }}</td></tr>
+        <tr><td>Tree coverage (%)</td><td>{{ result.forest_coverage }}</td></tr>
+        <tr><td>Trees required to plant</td><td>{{ result.trees_to_plant }}</td></tr>
+        <tr><td>Planting density (m² per tree)</td><td>{{ result.planting_density }}</td></tr>
+      </table>
+  {% else %}
+    <p>Enter a city or region above to start the analysis.</p>
+  {% endif %}
+
+</body>
+</html>

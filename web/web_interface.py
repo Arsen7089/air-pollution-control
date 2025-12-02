@@ -1,15 +1,21 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, redirect, url_for
 import io
 import base64
 import air_pollution_core.proceeder as ap
 from PIL import Image
 
-app = Flask(__name__)
+app = Flask("server")
 proceeder = ap.SatelliteImageProceeder()
 
-@app.route("/")
-def root():
-    return "Server OK"
+
+@app.route("/", methods=["GET", "POST"])
+def home():
+    if request.method == "POST":
+        region = request.form.get("region")
+        if region:
+            return redirect(url_for("index", region=region))
+
+    return render_template("index.html", result=None, image_base64=None)
 
 
 @app.route("/<region>")
@@ -44,6 +50,5 @@ def index(region):
 
     return render_template("index.html", result=result_data, image_base64=image_base64)
 
+
 app.run(debug=True)
-
-
