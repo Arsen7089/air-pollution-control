@@ -62,7 +62,7 @@ def admin_panel():
         field = request.form.get("field")
         
         if collection and document:
-            file_id = f"{collection}/{document}/{field}" if field else f"{collection}/{document}/*і"
+            file_id = f"{collection}/{document}/{field}" if field else f"{collection}/{document}/*"
             ok = storage.delete(file_id)
             message = f"Deleted: {file_id}" if ok else f"Error deleting {file_id}"
         else:
