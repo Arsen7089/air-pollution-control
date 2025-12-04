@@ -1,4 +1,3 @@
-````markdown
 # Pollution Control by Identifying Area for Afforestation
 
 This project is a Flask-based web application that analyzes satellite or aerial images to identify areas of trees and fields within a city. It outputs a color-coded image and a table indicating how many trees need to be planted and with what density for afforestation.
@@ -78,5 +77,4 @@ docker-compose down
 ```bash
 docker-compose logs -f
 ```
-````
 
