@@ -3,9 +3,11 @@ import io
 import base64
 import air_pollution_core.proceeder as ap
 from PIL import Image
+import settings.env as settings
 
 app = Flask("server")
-proceeder = ap.SatelliteImageProceeder()
+proceeder = ap.SatelliteImageProceeder(settings.OWM_API, settings.MONGO_IP, settings.MONGO_PORT)
+storage = proceeder.get_storage()
 
 
 @app.route("/", methods=["GET", "POST"])
@@ -50,5 +52,23 @@ def index(region):
 
     return render_template("index.html", result=result_data, image_base64=image_base64)
 
+@app.route("/admin", methods=["GET", "POST"])
+def admin_panel():
+    message = None
 
-app.run(debug=True)
+    if request.method == "POST":
+        collection = request.form.get("collection")
+        document = request.form.get("document")
+        field = request.form.get("field")
+        
+        if collection and document:
+            file_id = f"{collection}/{document}/{field}" if field else f"{collection}/{document}/*і"
+            ok = storage.delete(file_id)
+            message = f"Deleted: {file_id}" if ok else f"Error deleting {file_id}"
+        else:
+            message = "Collection and Document are required!"
+
+    db_dump = storage.get_data_dump()
+    return render_template("admin.html", collections=db_dump, message=message)
+
+app.run(debug=True, host=settings.WEB_IP, port=settings.WEB_PORT)

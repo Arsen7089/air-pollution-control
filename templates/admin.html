@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel</title>
+    <style>
+        body { font-family: Arial; background: #f7f7f7; padding: 20px; }
+        .block { background: white; padding: 15px; margin-bottom: 20px; border-radius: 8px; }
+        input[type=text] { width: 200px; padding: 6px; margin-right: 10px; }
+        button { padding: 6px 12px; cursor: pointer; }
+        table { border-collapse: collapse; width: 100%; margin-top: 10px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #eee; }
+        .success { background: #d1ffd1; padding: 10px; border-radius: 5px; margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+
+    <h1>Admin Panel</h1>
+
+    {% if message %}
+        <div class="success">
+            {{ message }}
+        </div>
+    {% endif %}
+
+    <div class="block">
+        <h2>Delete item</h2>
+        <form method="post">
+            <label>Collection:</label>
+            <input type="text" name="collection" placeholder="e.g. locations">
+            <label>Document:</label>
+            <input type="text" name="document" placeholder="e.g. Kyiv">
+            <label>Field (optional, use * to delete all fields):</label>
+            <input type="text" name="field" placeholder="e.g. image">
+            <br><br>
+            <button type="submit">Delete</button>
+        </form>
+    </div>
+
+    <div class="block">
+        <h2>Stored Data</h2>
+        {% for col, docs in collections.items() %}
+            <h3>Collection: {{ col }}</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Document ID</th>
+                        <th>Fields</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for doc in docs %}
+                        <tr>
+                            <td>{{ doc["_id"] }}</td>
+                            <td>
+                                <ul>
+                                {% for key, value in doc.items() %}
+                                    {% if key != "_id" %}
+                                        <li><strong>{{ key }}:</strong> {{ value }}</li>
+                                    {% endif %}
+                                {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endfor %}
+    </div>
+
+</body>
+</html>

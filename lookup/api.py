@@ -32,10 +32,12 @@ class AbstractAPIManager(ABC):
 
 class FreeAPIManager(AbstractAPIManager):
     def __init__(self, storage,
+                 owm_api_key: str,
                  bbox_delta: float = 0.005,
                  img_width: int = 600,
                  img_height: int = 400):
         self.storage = storage
+        self.owm_api_key = owm_api_key
         self.bbox_delta = bbox_delta
         self.img_width = img_width
         self.img_height = img_height

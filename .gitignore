@@ -1,4 +1,5 @@
 storage
 mongodb
 __pycache__/
+.env
 

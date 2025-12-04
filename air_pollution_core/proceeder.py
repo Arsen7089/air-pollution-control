@@ -13,19 +13,18 @@ class SatelliteImageProceeder:
     HSV_RANGES_ID = "calibration/simple_mask/hsv_ranges"
 
     def __init__(
-        self,
-        trees_per_m2: float = 0.02,
-        clean_air_forest_percent: float = 0.2,
+        self, owm_api, mongo_ip, mongo_port,
+        trees_per_m2: float = 0.02
     ):
-        self.file_storage = MongoFileStorage()
-        self.api = FreeAPIManager(self.file_storage)
+        self.file_storage = MongoFileStorage(mongo_ip, mongo_port)
+        self.api = FreeAPIManager(self.file_storage, owm_api)
         self.trees_per_m2 = trees_per_m2
         self.clean_air_forest_percent = clean_air_forest_percent
 
         hsv_ranges = self.file_storage.load_dict(self.HSV_RANGES_ID)
         if not hsv_ranges:
-            forest_img = self.to_hsv_np(Image.open("forest_full.png"))
-            field_img = self.to_hsv_np(Image.open("field_full.png"))
+            forest_img = self.to_hsv_np(Image.open("calibration_images/forest_full.png"))
+            field_img = self.to_hsv_np(Image.open("calibration_images/field_full.png"))
             hsv_ranges = {
                 "trees": self.analyze_hsv_range(forest_img),
                 "fields": self.analyze_hsv_range(field_img)
@@ -90,3 +89,7 @@ class SatelliteImageProceeder:
         low = np.minimum(low, high)
 
         return low.tolist(), high.tolist()
+    
+    def get_storage(self):
+        return self.file_storage
+        

@@ -6,7 +6,8 @@ from db.mongo.crud import MongoCRUD
 
 
 class MongoFileStorage(AbstractFileStorage):
-    def __init__(self, mongo_uri="mongodb://localhost:27017", db_name="file_storage"):
+    def __init__(self, mongo_ip, mongo_port, db_name="file_storage"):
+        mongo_uri = f"mongodb://{mongo_ip}:{mongo_port}/"
         self.crud = MongoCRUD(mongo_uri, db_name)
 
     def _parse_id(self, file_id: str):
@@ -66,3 +67,44 @@ class MongoFileStorage(AbstractFileStorage):
         except Exception as e:
             print(f"Error loading image: {e}")
             return None
+        
+    def delete(self, file_id: str) -> bool:
+        try:
+            collection, document, field = self._parse_id(file_id)
+
+            if field == "*":
+                doc = self.crud.find_by_name(collection, document)
+
+                if doc:
+                    for key, value in doc.items():
+                        if key.startswith("_"):
+                            continue
+
+                        if self.crud.is_file_ref(value):
+                            self.crud.delete_file_binary(value)
+
+                return self.crud.delete_document(collection, document)
+
+            doc = self.crud.find_by_name(collection, document, {field: 1})
+
+            if doc and field in doc:
+                value = doc[field]
+                if self.crud.is_file_ref(value):
+                    self.crud.delete_file_binary(value)
+
+            return self.crud.delete_field(collection, document, field)
+
+        except Exception as e:
+            print(f"Error deleting: {e}")
+            return False
+        
+    def get_data_dump(self):
+        collections = self.crud.db.list_collection_names()
+        db_dump = {}
+        for col in collections:
+            if col.startswith("__"):
+                continue
+            db_dump[col] = list(self.crud.db[col].find())
+        return db_dump
+
+

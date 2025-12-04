@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 from typing import Optional, Any
 from bson.binary import Binary
-
+from bson import ObjectId
 
 class MongoCRUD:
     def __init__(self, mongo_uri="mongodb://localhost:27017", db_name="file_storage"):
@@ -48,4 +48,10 @@ class MongoCRUD:
         files_collection = self.db["__files__"]
         result = files_collection.delete_one({"_id": file_id})
         return result.deleted_count > 0
+    
+    def is_file_ref(self, value: Any) -> bool:
+        if not isinstance(value, ObjectId):
+            return False
+        files_collection = self.db["__files__"]
+        return files_collection.find_one({"_id": value}) is not None
 
