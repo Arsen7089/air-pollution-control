@@ -25,8 +25,10 @@ WEB_PORT=8000
 # MongoDB
 MONGO_IP=mongo
 MONGO_PORT=27017
-MONGO_USER=your_mongo_user
-MONGO_PASS=your_mongo_password
+MONGO_USER=root
+MONGO_PASS=example
+
+# Do not change what is above if you use docker
 
 # Admin
 ADMIN_USER=admin
