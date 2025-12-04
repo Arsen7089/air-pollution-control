@@ -35,7 +35,7 @@ ADMIN_PASS=secret
 
 # OpenWeatherMap API
 OWM_API=Your_Open_Weather_Map_API_key
-````
+```
 
 ---
 
@@ -78,4 +78,5 @@ docker-compose down
 ```bash
 docker-compose logs -f
 ```
+````
 
