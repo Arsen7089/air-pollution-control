@@ -1,14 +1,32 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, Response
 import io
 import base64
 import air_pollution_core.proceeder as ap
 from PIL import Image
 import settings.env as settings
+from functools import wraps
 
 app = Flask("server")
-proceeder = ap.SatelliteImageProceeder(settings.OWM_API, settings.MONGO_IP, settings.MONGO_PORT)
+proceeder = ap.SatelliteImageProceeder(settings.OWM_API, settings.MONGO_IP, settings.MONGO_PORT, settings.MONGO_USER, settings.MONGO_PASS)
 storage = proceeder.get_storage()
 
+def check_auth(username, password):
+    return username == settings.ADMIN_USER and password == settings.ADMIN_PASS
+
+def authenticate_error():
+    return Response(
+        'Authentication required', 401,
+        {'WWW-Authenticate': 'Basic realm="Login Required"'}
+    )
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate_error()
+        return f(*args, **kwargs)
+    return decorated
 
 @app.route("/", methods=["GET", "POST"])
 def home():
@@ -17,7 +35,6 @@ def home():
         if region:
             return redirect(url_for("index", region=region))
     return render_template("index.html", result=None, image_base64=None)
-
 
 @app.route("/<region>")
 def index(region):
@@ -57,8 +74,8 @@ def index(region):
 
     return render_template("index.html", result=result_data, image_base64=image_base64)
 
-
 @app.route("/admin", methods=["GET", "POST"])
+@requires_auth
 def admin_panel():
     message = None
 
@@ -76,5 +93,5 @@ def admin_panel():
 
     db_dump = storage.get_data_dump()
     return render_template("admin.html", collections=db_dump, message=message)
-
+    
 app.run(debug=True, host=settings.WEB_IP, port=settings.WEB_PORT)

@@ -120,23 +120,81 @@ class FreeAPIManager(AbstractAPIManager):
             raise ValueError(f"No air pollution data for {lat},{lon}")
 
         components = data["list"][0]["components"]
-        pm25 = components.get("pm2_5", 0.0)
 
-        def aqi_pm25(c: float) -> int:
-            breakpoints = [
+        pm25 = components.get("pm2_5", 0.0)          
+        pm10 = components.get("pm10", 0.0)           
+        co = components.get("co", 0.0) / 1145.0      
+        so2 = components.get("so2", 0.0) / 2620.0   
+        no2 = components.get("no2", 0.0) / 1880.0    
+        o3 = components.get("o3", 0.0) / 2000.0    
+
+        breakpoints = {
+            "pm25": [
                 (0.0, 12.0, 0, 50),
                 (12.1, 35.4, 51, 100),
                 (35.5, 55.4, 101, 150),
                 (55.5, 150.4, 151, 200),
                 (150.5, 250.4, 201, 300),
                 (250.5, 500.4, 301, 500)
+            ],
+            "pm10": [
+                (0, 54, 0, 50),
+                (55, 154, 51, 100),
+                (155, 254, 101, 150),
+                (255, 354, 151, 200),
+                (355, 424, 201, 300),
+                (425, 604, 301, 500)
+            ],
+            "co": [
+                (0.0, 4.4, 0, 50),
+                (4.5, 9.4, 51, 100),
+                (9.5, 12.4, 101, 150),
+                (12.5, 15.4, 151, 200),
+                (15.5, 30.4, 201, 300),
+                (30.5, 50.4, 301, 500)
+            ],
+            "so2": [
+                (0.0, 0.035, 0, 50),
+                (0.036, 0.075, 51, 100),
+                (0.076, 0.185, 101, 150),
+                (0.186, 0.304, 151, 200),
+                (0.305, 0.604, 201, 300),
+                (0.605, 1.004, 301, 500)
+            ],
+            "no2": [
+                (0.0, 0.053, 0, 50),
+                (0.054, 0.100, 51, 100),
+                (0.101, 0.360, 101, 150),
+                (0.361, 0.649, 151, 200),
+                (0.650, 1.249, 201, 300),
+                (1.250, 2.049, 301, 500)
+            ],
+            "o3": [
+                (0.0, 0.054, 0, 50),
+                (0.055, 0.070, 51, 100),
+                (0.071, 0.085, 101, 150),
+                (0.086, 0.105, 151, 200),
+                (0.106, 0.200, 201, 300)
             ]
-            for c_low, c_high, i_low, i_high in breakpoints:
-                if c_low <= c <= c_high:
-                    return round((i_high - i_low)/(c_high - c_low)*(c - c_low) + i_low)
+        }
+
+        def calc_aqi(value, pollutant):
+            for c_low, c_high, i_low, i_high in breakpoints[pollutant]:
+                if c_low <= value <= c_high:
+                    return round((i_high - i_low) / (c_high - c_low) * (value - c_low) + i_low)
             return 500
 
-        aqi_value = aqi_pm25(pm25)
+        aqi_values = {
+            "pm25": calc_aqi(pm25, "pm25"),
+            "pm10": calc_aqi(pm10, "pm10"),
+            "co": calc_aqi(co, "co"),
+            "so2": calc_aqi(so2, "so2"),
+            "no2": calc_aqi(no2, "no2"),
+            "o3": calc_aqi(o3, "o3")
+        }
+
+        aqi_value = max(aqi_values.values())
+
         if aqi_value <= 50:
             category = "Good"
         elif aqi_value <= 100:
@@ -152,10 +210,14 @@ class FreeAPIManager(AbstractAPIManager):
 
         result = {
             "aqi": aqi_value,
-            "category": category
+            "category": category,
+            "components": aqi_values  
         }
+
         self.storage.save_dict(result, file_id)
         return result
+
+
 
     def compute_pixel_scale(self, lat: float) -> float:
         meters_per_deg = 111_320

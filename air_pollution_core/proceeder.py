@@ -13,10 +13,10 @@ class SatelliteImageProceeder:
     HSV_RANGES_ID = "calibration/simple_mask/hsv_ranges"
 
     def __init__(
-        self, owm_api, mongo_ip, mongo_port,
+        self, owm_api, mongo_ip, mongo_port, mongo_user, mongo_pass,
         trees_per_m2: float = 0.02
     ):
-        self.file_storage = MongoFileStorage(mongo_ip, mongo_port)
+        self.file_storage = MongoFileStorage(mongo_ip, mongo_port, mongo_user, mongo_pass)
         self.api = FreeAPIManager(self.file_storage, owm_api)
         self.trees_per_m2 = trees_per_m2
         
@@ -69,6 +69,8 @@ class SatelliteImageProceeder:
 
         return {"image": overlay, **forest_data}
 
+    import numpy as np
+
     @staticmethod
     def analyze_hsv_range(img_hsv: np.ndarray, pad=(5, 15, 15)):
         h = img_hsv[..., 0]
@@ -81,14 +83,26 @@ class SatelliteImageProceeder:
         if len(h) == 0:
             raise ValueError("Invalid Image: no valid pixels found")
 
-        low = np.percentile([h, s, v], 10, axis=1)
-        high = np.percentile([h, s, v], 90, axis=1)
+        low = np.array([
+            np.percentile(h, 10),
+            np.percentile(s, 10),
+            np.percentile(v, 10)
+        ])
+        high = np.array([
+            np.percentile(h, 90),
+            np.percentile(s, 90),
+            np.percentile(v, 90)
+        ])
 
-        low = np.clip(low - pad, 0, [255, 255, 255])
-        high = np.clip(high + pad, 0, [255, 255, 255])
-        low = np.minimum(low, high)
+        pad = np.array(pad)
+        low = np.clip(low - pad, 0, 255)
+        high = np.clip(high + pad, 0, 255)
+
+        if np.any(high < low):
+            raise ValueError("Bad HSV ranges")
 
         return low.tolist(), high.tolist()
+
     
     def get_storage(self):
         return self.file_storage

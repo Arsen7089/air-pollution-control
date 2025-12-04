@@ -6,8 +6,8 @@ from db.mongo.crud import MongoCRUD
 
 
 class MongoFileStorage(AbstractFileStorage):
-    def __init__(self, mongo_ip, mongo_port, db_name="file_storage"):
-        mongo_uri = f"mongodb://{mongo_ip}:{mongo_port}/"
+    def __init__(self, mongo_ip, mongo_port, mongo_user, mongo_pass, db_name="file_storage"):
+        mongo_uri = f"mongodb://{mongo_user}:{mongo_pass}@{mongo_ip}:{mongo_port}/"
         self.crud = MongoCRUD(mongo_uri, db_name)
 
     def _parse_id(self, file_id: str):

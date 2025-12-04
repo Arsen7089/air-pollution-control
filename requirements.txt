@@ -1,0 +1,8 @@
+Flask
+pillow
+pymongo
+python-dotenv
+opencv-python
+numpy
+requests
+
