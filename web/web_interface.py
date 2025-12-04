@@ -16,7 +16,6 @@ def home():
         region = request.form.get("region")
         if region:
             return redirect(url_for("index", region=region))
-
     return render_template("index.html", result=None, image_base64=None)
 
 
@@ -34,14 +33,20 @@ def index(region):
             img_io.seek(0)
             image_base64 = base64.b64encode(img_io.getvalue()).decode("utf-8")
 
+            pollution = result.get("pollution", {})
+
             result_data = {
                 "region": region,
                 "trees_area": result["trees"]["area_hectares"],
                 "fields_area": result["fields"]["area_hectares"],
                 "estimated_trees": result["trees"]["estimated_trees"],
                 "forest_coverage": result["forest_coverage_percent"],
-                "trees_to_plant": result["trees_to_plant_for_clean_air"],
-                "planting_density": result["planting_density_m2"]
+                "trees_to_plant": pollution.get("trees_to_plant_for_clean_air", result.get("trees_to_plant_for_clean_air", 0)),
+                "planting_density": result.get("planting_density_m2", 0.0),
+                "current_aqi": pollution.get("current_aqi", 0),
+                "target_aqi": pollution.get("target_aqi", 50),
+                "aqi_category": pollution.get("category", ""),
+                "planting_density_for_clean_air": pollution.get("planting_density_m2", 0.0)
             }
         else:
             img_io = io.BytesIO()
@@ -52,6 +57,7 @@ def index(region):
 
     return render_template("index.html", result=result_data, image_base64=image_base64)
 
+
 @app.route("/admin", methods=["GET", "POST"])
 def admin_panel():
     message = None
@@ -60,7 +66,7 @@ def admin_panel():
         collection = request.form.get("collection")
         document = request.form.get("document")
         field = request.form.get("field")
-        
+
         if collection and document:
             file_id = f"{collection}/{document}/{field}" if field else f"{collection}/{document}/*"
             ok = storage.delete(file_id)

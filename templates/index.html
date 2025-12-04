@@ -3,29 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <title>Afforestation Analysis</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 40px; }
-    img { max-width: 600px; margin-top: 20px; border: 1px solid #ccc; }
-    table { border-collapse: collapse; margin-top: 20px; }
-    td, th { border: 1px solid #ccc; padding: 8px; }
-    input[type=text] {
-        padding: 8px;
-        width: 230px;
-        font-size: 15px;
-    }
-    button {
-        padding: 8px 14px;
-        font-size: 15px;
-        cursor: pointer;
-    }
-  </style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
   <h1>Afforestation Potential Analyzer</h1>
 
   <form method="POST" action="/">
-    <input type="text" name="region" placeholder="Enter a city or region..." required>
+    <input type="text" name="region" placeholder="Enter a city or region..." required value="{{ request.form.region }}">
     <button type="submit">Analyze</button>
   </form>
 
@@ -36,15 +21,30 @@
       <img src="data:image/png;base64,{{ image_base64 }}" alt="Result Image">
     {% endif %}
 
-      <table>
-        <tr><th>Parameter</th><th>Value</th></tr>
-        <tr><td>Tree area (ha)</td><td>{{ result.trees_area }}</td></tr>
-        <tr><td>Land area (ha)</td><td>{{ result.fields_area }}</td></tr>
-        <tr><td>Estimated number of trees</td><td>{{ result.estimated_trees }}</td></tr>
-        <tr><td>Tree coverage (%)</td><td>{{ result.forest_coverage }}</td></tr>
-        <tr><td>Trees required to plant</td><td>{{ result.trees_to_plant }}</td></tr>
-        <tr><td>Planting density (m² per tree)</td><td>{{ result.planting_density }}</td></tr>
-      </table>
+    <table>
+      <tr><th>Parameter</th><th>Value</th></tr>
+      <tr><td>Tree area (ha)</td><td>{{ result.trees_area }}</td></tr>
+      <tr><td>Land area (ha)</td><td>{{ result.fields_area }}</td></tr>
+      <tr><td>Estimated number of trees</td><td>{{ result.estimated_trees }}</td></tr>
+      <tr><td>Tree coverage (%)</td><td>{{ result.forest_coverage }}</td></tr>
+      <tr><td>Trees required to plant</td><td>{{ result.trees_to_plant }}</td></tr>
+      <tr><td>Planting density (m² per tree)</td><td>{{ result.planting_density }}</td></tr>
+      <tr><td>Current AQI</td>
+          <td class="
+            {% if result.aqi_category == 'Good' %}aqi-good{% endif %}
+            {% if result.aqi_category == 'Moderate' %}aqi-moderate{% endif %}
+            {% if result.aqi_category == 'Unhealthy for Sensitive Groups' %}aqi-unhealthy-sg{% endif %}
+            {% if result.aqi_category == 'Unhealthy' %}aqi-unhealthy{% endif %}
+            {% if result.aqi_category == 'Very Unhealthy' %}aqi-very-unhealthy{% endif %}
+            {% if result.aqi_category == 'Hazardous' %}aqi-hazardous{% endif %}
+          ">
+            {{ result.current_aqi }} ({{ result.aqi_category }})
+          </td>
+      </tr>
+      <tr><td>Target AQI</td><td>{{ result.target_aqi }}</td></tr>
+      <tr><td>Trees to plant for clean air</td><td>{{ result.trees_to_plant }}</td></tr>
+      <tr><td>Planting density for clean air</td><td>{{ result.planting_density_for_clean_air }}</td></tr>
+    </table>
   {% else %}
     <p>Enter a city or region above to start the analysis.</p>
   {% endif %}

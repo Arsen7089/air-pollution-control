@@ -19,8 +19,7 @@ class SatelliteImageProceeder:
         self.file_storage = MongoFileStorage(mongo_ip, mongo_port)
         self.api = FreeAPIManager(self.file_storage, owm_api)
         self.trees_per_m2 = trees_per_m2
-        self.clean_air_forest_percent = clean_air_forest_percent
-
+        
         hsv_ranges = self.file_storage.load_dict(self.HSV_RANGES_ID)
         if not hsv_ranges:
             forest_img = self.to_hsv_np(Image.open("calibration_images/forest_full.png"))
@@ -41,10 +40,10 @@ class SatelliteImageProceeder:
         return cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
 
     def process_by_place(self, place_name: str):
-        img, pixel_m2 = self.api.get_photo_by_place(place_name)
-        return self.process_satellite_image(img, pixel_m2, place_name)
+        img, pixel_m2, pollution = self.api.get_photo_by_place(place_name)
+        return self.process_satellite_image(img, pixel_m2, place_name, pollution)
 
-    def process_satellite_image(self, img: Image.Image, pixel_to_m2: float, place_name: str):
+    def process_satellite_image(self, img: Image.Image, pixel_to_m2: float, place_name: str, pollution):
         forest_data_id = f"locations/{place_name}/forest_data"
         overlay_id = f"locations/{place_name}/overlay"
 
@@ -60,7 +59,8 @@ class SatelliteImageProceeder:
         forest_data = self.area_calculator.calculate_forest_data(
             mask_trees, mask_fields, pixel_to_m2,
             trees_per_m2=self.trees_per_m2,
-            clean_air_forest_percent=self.clean_air_forest_percent
+            pollution=pollution
+            
         )
 
         overlay = self.visualizer.overlay_masks(img_hsv, mask_trees, mask_fields)
